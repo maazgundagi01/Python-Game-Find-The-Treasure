@@ -2,28 +2,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Treasure Island Adventure", layout="centered")
 
-# Initialize session state variables
-if "step" not in st.session_state:
-    st.session_state.step = "start"
-if "direction" not in st.session_state:
-    st.session_state.direction = ""
-if "turn_0" not in st.session_state:
-    st.session_state.turn_0 = ""
-if "turn_1" not in st.session_state:
-    st.session_state.turn_1 = ""
-if "turn_2" not in st.session_state:
-    st.session_state.turn_2 = ""
-if "t2_action" not in st.session_state:
-    st.session_state.t2_action = ""
-
-def reset_game():
-    st.session_state.step = "start"
-    st.session_state.direction = ""
-    st.session_state.turn_0 = ""
-    st.session_state.turn_1 = ""
-    st.session_state.turn_2 = ""
-    st.session_state.t2_action = ""
-
+# ASCII art rendered once, always visible
 def show_ascii_art():
     st.code('''                  __..-----')
         ,.--._ .-'_..--...-'
@@ -57,23 +36,49 @@ def show_ascii_art():
                    """"       ---.....   ___....---- 
 ''')
 
+show_ascii_art()
+
 st.markdown("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 st.title("Welcome to Treasure Island! 🏴‍☠️")
 
+# Initialize session state variables
+if "step" not in st.session_state:
+    st.session_state.step = "start"
+if "direction" not in st.session_state:
+    st.session_state.direction = ""
+if "choice_made" not in st.session_state:
+    st.session_state.choice_made = False
+if "current_choice" not in st.session_state:
+    st.session_state.current_choice = None
+
+def reset_game():
+    st.session_state.step = "start"
+    st.session_state.direction = ""
+    st.session_state.choice_made = False
+    st.session_state.current_choice = None
+
+def proceed(next_step):
+    st.session_state.step = next_step
+    st.session_state.choice_made = False
+    st.session_state.current_choice = None
+
 # --- START STEP ---
 if st.session_state.step == "start":
-    choice = st.radio(
-        "You have decided to set sail towards a small undiscovered island to find treasure of Jack Sparrow!\n"
-        "The problem is that the island is undiscovered hence you don't know which direction to go in.\n"
-        "What do you do?",
-        ("Look at the map 🗺️", "Go North 🚢", "Turn back 🏠")
-    )
+    options = ["Look at the map 🗺️", "Go North 🚢", "Turn back 🏠"]
+    choice = st.radio("You have decided to set sail towards a small undiscovered island to find treasure of Jack Sparrow!\n"
+                      "The problem is that the island is undiscovered hence you don't know which direction to go in.\n"
+                      "What do you do?", options, key="start_choice")
+
     if st.button("Choose"):
-        if choice == "Look at the map 🗺️":
-            st.session_state.step = "map"
-        elif choice == "Go North 🚢":
+        st.session_state.current_choice = choice
+        st.session_state.choice_made = True
+
+    if st.session_state.choice_made:
+        if st.session_state.current_choice == "Look at the map 🗺️":
+            proceed("map")
+        elif st.session_state.current_choice == "Go North 🚢":
             st.session_state.direction = "north"
-            st.session_state.step = "sailing"
+            proceed("sailing")
         else:
             st.session_state.step = "game_over"
             st.session_state.game_over_reason = (
@@ -95,13 +100,16 @@ if st.session_state.step == "map":
     - A dolphin's drawing in the east 🐬
     - A drawing of a ship wreckage in the west 🚢
     """)
-    direction_choice = st.radio(
-        "Where do you go?",
-        ("North 🔥", "East 🐬", "West 🚢")
-    )
+    options = ["North 🔥", "East 🐬", "West 🚢"]
+    direction_choice = st.radio("Where do you go?", options, key="map_choice")
+
     if st.button("Set Sail"):
-        st.session_state.direction = direction_choice.split()[0].lower()
-        st.session_state.step = "sailing"
+        st.session_state.current_choice = direction_choice
+        st.session_state.choice_made = True
+
+    if st.session_state.choice_made:
+        st.session_state.direction = st.session_state.current_choice.split()[0].lower()
+        proceed("sailing")
     st.stop()
 
 # --- SAILING STEP ---
@@ -115,13 +123,12 @@ if st.session_state.step == "sailing":
     """)
     if st.button("Continue"):
         if st.session_state.direction == "north":
-            st.session_state.step = "volcano"
+            proceed("volcano")
         elif st.session_state.direction in ["east", "west"]:
-            # skip to corresponding step
             if st.session_state.direction == "east":
-                st.session_state.step = "east_mermaid"
+                proceed("east_mermaid")
             else:
-                st.session_state.step = "west_ship"
+                proceed("west_ship")
     st.stop()
 
 # --- NORTH VOLCANO STEP ---
@@ -132,17 +139,20 @@ if st.session_state.step == "volcano":
     You rush out and see a volcano erupting right ahead!  
     You must steer away quickly!
     """)
-    turn = st.radio(
-        "Which way do you turn to avoid the volcano?",
-        ("Right (East)", "Left (West)")
-    )
+    options = ["Right (East)", "Left (West)"]
+    turn = st.radio("Which way do you turn to avoid the volcano?", options, key="volcano_choice")
+
     if st.button("Turn"):
-        if turn.startswith("Right"):
+        st.session_state.current_choice = turn
+        st.session_state.choice_made = True
+
+    if st.session_state.choice_made:
+        if st.session_state.current_choice.startswith("Right"):
             st.session_state.direction = "east"
-            st.session_state.step = "sailing_after_volcano"
+            proceed("sailing_after_volcano")
         else:
             st.session_state.direction = "west"
-            st.session_state.step = "sailing_after_volcano"
+            proceed("sailing_after_volcano")
     st.stop()
 
 # --- AFTER VOLCANO SAILING ---
@@ -150,9 +160,9 @@ if st.session_state.step == "sailing_after_volcano":
     st.markdown(f"PHEW! You turned towards the **{st.session_state.direction}** just in time and avoided the volcano ash and tsunami.")
     if st.button("Continue Sailing"):
         if st.session_state.direction == "east":
-            st.session_state.step = "east_mermaid"
+            proceed("east_mermaid")
         else:
-            st.session_state.step = "west_ship"
+            proceed("west_ship")
     st.stop()
 
 # --- EAST MERMAID STEP ---
@@ -160,25 +170,31 @@ if st.session_state.step == "east_mermaid":
     st.markdown("""
     You are asleep and you hear a gentle voice, a lullaby your mother used to sing.
     """)
-    choice = st.radio(
-        "What do you do?",
-        ("Go out on deck to check who's there", "Hide and lock the door")
-    )
+    options = ["Go out on deck to check who's there", "Hide and lock the door"]
+    choice = st.radio("What do you do?", options, key="east_mermaid_choice")
+
     if st.button("Choose"):
-        if choice == "Go out on deck to check who's there":
-            st.session_state.step = "mermaid_encounter"
+        st.session_state.current_choice = choice
+        st.session_state.choice_made = True
+
+    if st.session_state.choice_made:
+        if st.session_state.current_choice == "Go out on deck to check who's there":
+            proceed("mermaid_encounter")
         else:
-            st.session_state.step = "mermaid_hide"
+            proceed("mermaid_hide")
     st.stop()
 
 # --- MERMAID ENCOUNTER ---
 if st.session_state.step == "mermaid_encounter":
-    choice = st.radio(
-        "You find a mermaid waiting for you. What do you do?",
-        ("Go to the mermaid", "Hide and go back inside")
-    )
+    options = ["Go to the mermaid", "Hide and go back inside"]
+    choice = st.radio("You find a mermaid waiting for you. What do you do?", options, key="mermaid_encounter_choice")
+
     if st.button("Choose"):
-        if choice == "Go to the mermaid":
+        st.session_state.current_choice = choice
+        st.session_state.choice_made = True
+
+    if st.session_state.choice_made:
+        if st.session_state.current_choice == "Go to the mermaid":
             st.markdown("""
             You approach the mermaid, but she tells you to go away!  
             You start running, slip on wet floor, and fall into the water!  
@@ -190,7 +206,7 @@ if st.session_state.step == "mermaid_encounter":
                 reset_game()
             st.stop()
         else:
-            st.session_state.step = "mermaid_hide"
+            proceed("mermaid_hide")
     st.stop()
 
 # --- MERMAID HIDING ---
@@ -203,7 +219,7 @@ if st.session_state.step == "mermaid_hide":
     """)
     if st.button("Set sail West"):
         st.session_state.direction = "west"
-        st.session_state.step = "west_ship"
+        proceed("west_ship")
     st.stop()
 
 # --- WEST SHIP STEP ---
@@ -212,12 +228,15 @@ if st.session_state.step == "west_ship":
     Sailing west, you see another ship on the horizon flying a black flag.  
     It doesn't look wrecked.
     """)
-    choice = st.radio(
-        "What do you do?",
-        ("Wait and see", "Attack the ship")
-    )
+    options = ["Wait and see", "Attack the ship"]
+    choice = st.radio("What do you do?", options, key="west_ship_choice")
+
     if st.button("Choose"):
-        if choice == "Wait and see":
+        st.session_state.current_choice = choice
+        st.session_state.choice_made = True
+
+    if st.session_state.choice_made:
+        if st.session_state.current_choice == "Wait and see":
             st.markdown("""
             BOOM! The enemy ship fires first and attacks your ship.  
             Your ship is wrecked and you are captured.
@@ -227,17 +246,23 @@ if st.session_state.step == "west_ship":
                 reset_game()
             st.stop()
         else:
-            st.session_state.step = "attack_follow"
+            proceed("attack_follow")
     st.stop()
 
 # --- ATTACK OR FOLLOW STEP ---
 if st.session_state.step == "attack_follow":
-    choice = st.radio(
-        "Enemy ship surrenders and moves east, revealing the treasure island and wrecked ship.\nWhat do you do?",
-        ("Go to the wrecked ship", "Follow the enemy ship")
-    )
+    options = [
+        "Go to the wrecked ship",
+        "Follow the enemy ship"
+    ]
+    choice = st.radio("Enemy ship surrenders and moves east, revealing the treasure island and wrecked ship.\nWhat do you do?", options, key="attack_follow_choice")
+
     if st.button("Choose"):
-        if choice == "Go to the wrecked ship":
+        st.session_state.current_choice = choice
+        st.session_state.choice_made = True
+
+    if st.session_state.choice_made:
+        if st.session_state.current_choice == "Go to the wrecked ship":
             st.markdown("""
             You sail to the wrecked ship but it's empty!  
             The enemies have already taken the treasure.
@@ -247,7 +272,7 @@ if st.session_state.step == "attack_follow":
                 reset_game()
             st.stop()
         else:
-            st.session_state.step = "final_battle"
+            proceed("final_battle")
     st.stop()
 
 # --- FINAL BATTLE & TREASURE ---
