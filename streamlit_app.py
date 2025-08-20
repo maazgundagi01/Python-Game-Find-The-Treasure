@@ -38,7 +38,6 @@ def show_ascii_art():
 
 show_ascii_art()
 
-st.markdown("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 st.title("Welcome to Treasure Island! 🏴‍☠️")
 
 # Initialize session state variables
